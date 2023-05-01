@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/pages/login.dart';
 import 'package:flutter_bioma_application/pages/qrScreen.dart';
+import 'package:flutter_bioma_application/pages/reservasScreen.dart';
+import 'package:flutter_bioma_application/providers/auth_providers.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import 'areaDetailsScreen.dart';
 
@@ -11,7 +14,55 @@ class AreasScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return Scaffold(
+      drawer: Drawer(
+        // Add a ListView to the drawer. This ensures the user can scroll
+        // through the options in the drawer if there isn't enough vertical
+        // space to fit everything.
+        child: ListView(
+          // Important: Remove any padding from the ListView.
+          padding: EdgeInsets.zero,
+          children: [
+               DrawerHeader(
+              
+              decoration: const BoxDecoration(
+                 color: Color(0xfff73B59E),
+                 image: DecorationImage(image: AssetImage('assets/splash.png'), fit: BoxFit.contain)
+              ),
+              child: Container(),
+            ),
+            ListTile(
+            title: const Text('Reservas'),
+            onTap: () {
+              Get.to(()=>  ReservasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+            }
+            ),
+            ListTile(
+              title: const Text('Cerrar Sesión'),
+              onTap: () {
+                     authService.logout();
+                     Get.offAll(()=> LoginScreen(), transition: Transition.fade, duration: Duration(seconds: 1));
+                     
+                    //  Navigator.pushReplacementNamed(context, 'login');
+                      
+              },
+            ),
+          ],
+        ),
+      ), 
+      // Drawer(
+      //   child: ListView.builder(
+      //     itemCount: 1,
+      //     itemBuilder: ((context, index) {
+      //     return ListTile(
+      //       title: const Text('Reservas'),
+      //       onTap: () {
+      //         Get.to(()=>  ReservasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+      //       },
+      //     );
+      //   })),
+      // ),
       floatingActionButton: FloatingActionButton(
         onPressed: (){
           Get.to(()=>  const QRScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
@@ -41,12 +92,12 @@ class AreasScreen extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             scrollDirection: Axis.vertical,
             children: const [
-                   CustomAreaCard(name: 'Sala de Juntas', capacidad: '10',precio: '500', available: true, image:'http://ibercenter.com/wp-content/uploads/2020/10/Sala-de-juntas.jpg' ),
-                   CustomAreaCard(name: 'Sala A5', capacidad: '5',precio: '250', available: false, image:'https://www.tdm.com.mx/wp-content/uploads/2020/08/equipo-de-videoconferencia-sala-de-juntas.jpeg' ),
-                   CustomAreaCard(name: 'Oficina A2', capacidad: '10',precio: '300', available: false, image:'https://s3-us-west-2.amazonaws.com/wp-clustar/wp-content/uploads/2022/02/15180125/Imagen-sala-de-juntas-yellow.png' ),
-                   CustomAreaCard(name: 'Oficina B5', capacidad: '8',precio: '400', available: true, image:'https://www.centrum750.com/wp-content/uploads/2020/03/salas-paris-2-min.jpg' ),
-                   CustomAreaCard(name: 'Oficina A7', capacidad: '5',precio: '370', available: false, image:'https://izabc.b-cdn.net/wp-content/uploads/2018/08/RentadeSalasdeJuntasenIZABusinessCenters.jpeg' ),
-                   CustomAreaCard(name: 'Oficina B8', capacidad: '7',precio: '410', available: true, image:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPE1Kwh1slGm0ad8dmi64TsbpzUWB8yWaEJg&usqp=CAU' ),
+                   CustomAreaCard(name: 'Sala de Juntas', capacidad: '10',precio: 100, available: true, image:'http://ibercenter.com/wp-content/uploads/2020/10/Sala-de-juntas.jpg' ),
+                   CustomAreaCard(name: 'Sala A5', capacidad: '5',precio: 150, available: false, image:'https://www.tdm.com.mx/wp-content/uploads/2020/08/equipo-de-videoconferencia-sala-de-juntas.jpeg' ),
+                   CustomAreaCard(name: 'Oficina A2', capacidad: '10',precio: 200, available: false, image:'https://s3-us-west-2.amazonaws.com/wp-clustar/wp-content/uploads/2022/02/15180125/Imagen-sala-de-juntas-yellow.png' ),
+                   CustomAreaCard(name: 'Oficina B5', capacidad: '8',precio: 180, available: true, image:'https://www.centrum750.com/wp-content/uploads/2020/03/salas-paris-2-min.jpg' ),
+                   CustomAreaCard(name: 'Oficina A7', capacidad: '5',precio: 120, available: false, image:'https://izabc.b-cdn.net/wp-content/uploads/2018/08/RentadeSalasdeJuntasenIZABusinessCenters.jpeg' ),
+                   CustomAreaCard(name: 'Oficina B8', capacidad: '7',precio: 170, available: true, image:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPE1Kwh1slGm0ad8dmi64TsbpzUWB8yWaEJg&usqp=CAU' ),
                    
      ] )
     )
@@ -61,7 +112,7 @@ class CustomAreaCard extends StatelessWidget {
     Key? key, required this.available, required this.capacidad, required this.name, required this.image, required this.precio,
   }) : super(key: key);
   final String image;
-  final String precio;
+  final num precio;
   final bool available;
   final String capacidad;
   final String name;
@@ -145,7 +196,7 @@ class ImageCard extends StatelessWidget {
     Key? key, required this.image, required this.precio, required this.capacidad, required this.name,
   }) : super(key: key);
   final String image;
-  final String precio;
+  final num precio;
   final String capacidad;
   final String name;
 

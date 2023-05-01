@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bioma_application/pages/areaDetailsScreen.dart';
 import 'package:flutter_bioma_application/pages/areasScreen.dart';
 import 'package:flutter_bioma_application/providers/auth_providers.dart';
 import 'package:flutter_bioma_application/utils/notifications_service.dart';
@@ -42,11 +41,10 @@ class MyApp extends StatelessWidget {
       routes: {
         'login' : (context) => const LoginScreen(),
         'areas' : (context) => const AreasScreen(),
-        
-
       },
     );
   }
+
 }
 
 

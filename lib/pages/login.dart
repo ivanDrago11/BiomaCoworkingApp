@@ -180,7 +180,7 @@ class _LoginFields extends StatelessWidget {
                 final String? errorMessage = await authService.login(loginForm.email, loginForm.password);
 
                 if ( errorMessage == null ) {
-                  Get.to(()=> const AreasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+                  Get.offAll(()=> const AreasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
                   // Navigator.pushReplacementNamed(context, 'mapa');
                 } else {
                   // TODO: mostrar error en pantalla
@@ -203,8 +203,6 @@ class _LoginFields extends StatelessWidget {
     );
   }
 }
-
-
 
 
 

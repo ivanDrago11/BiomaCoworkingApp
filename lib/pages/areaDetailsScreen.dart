@@ -1,15 +1,29 @@
 
 
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-class AreaDetailsScreen extends StatelessWidget {
+import 'dart:ffi';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bioma_application/models/reserva.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import 'package:numberpicker/numberpicker.dart';
+
+import '../database/db.dart';
+
+class AreaDetailsScreen extends StatefulWidget {
   const AreaDetailsScreen({super.key, required this.name, required this.precio, required this.capacidad, required this.image});
   final String name;
-  final String precio;
+  final num precio;
   final String capacidad; 
   final String image;
 
+  @override
+  State<AreaDetailsScreen> createState() => _AreaDetailsScreenState();
+}
+
+class _AreaDetailsScreenState extends State<AreaDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,14 +37,13 @@ class AreaDetailsScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          	    _headerImage(image: image),
-          		_areaDetails(name: name, precio: precio, capacidad: capacidad,)
+          	    _headerImage(image: widget.image),
+          		_areaDetails(name: widget.name, precio: widget.precio, capacidad: widget.capacidad,image: widget.image,)
         ],
       ),
     );
   }
 }
-
 // ignore: camel_case_types
 class _headerImage extends StatelessWidget {
   const _headerImage({super.key, required this.image});
@@ -48,11 +61,20 @@ class _headerImage extends StatelessWidget {
 }
 
 // ignore: camel_case_types
-class _areaDetails extends StatelessWidget {
-  const _areaDetails({super.key, required this.name, required this.precio, required this.capacidad});
+class _areaDetails extends StatefulWidget {
+  const _areaDetails({super.key, required this.name, required this.precio, required this.capacidad, required this.image});
   final String name;
-  final String precio;
+  final num precio;
   final String capacidad;
+  final String image;
+
+  @override
+  State<_areaDetails> createState() => _areaDetailsState();
+}
+
+class _areaDetailsState extends State<_areaDetails> {
+  int _currentValue = 5;
+  num costoTotal = 5;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -65,7 +87,7 @@ class _areaDetails extends StatelessWidget {
 			  children: [
 				const Icon(Icons.business_center_outlined, size: 35),
 				const SizedBox(width: 10,),
-			    Text(name, style: GoogleFonts.roboto(fontSize: 30, fontWeight: FontWeight.w500),),
+			    Text(widget.name, style: GoogleFonts.roboto(fontSize: 30, fontWeight: FontWeight.w500),),
 			  ],
 			),),
 			
@@ -109,7 +131,7 @@ class _areaDetails extends StatelessWidget {
          child: Padding(
            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 8),
            child: Text(
-                 '$precio/hr',
+                 '${widget.precio}/hr',
                  style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
            ),
          ),
@@ -129,7 +151,7 @@ class _areaDetails extends StatelessWidget {
          child: Padding(
            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 8),
            child: Text(
-                 '$capacidad',
+                 '${widget.capacidad}',
                  style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
            ),
          ),
@@ -164,12 +186,68 @@ class _areaDetails extends StatelessWidget {
 								color: Colors.white),
 								),
 						onPressed: () async{
-							DateTime? newDate = await showDatePicker(
-								context: context, 
-								initialDate: DateTime.now(), 
-								firstDate: DateTime(2022), 
-								lastDate: DateTime(2023)
-								);
+
+							DateTime? newDate = await getDatePickerWidget(context);
+
+              if (newDate != null) {
+              String dateFormated = DateFormat('yyyy-MM-dd').format(newDate!);
+              TimeOfDay? newTime = await getPickerTime(context);
+              
+
+              if(newTime != null){
+                final localizations = MaterialLocalizations.of(context);
+                final timeFormated = localizations.formatTimeOfDay(newTime!);
+               var hours = await showDialog(context: context, builder: (context) {
+
+                  return AlertDialog(
+                    title: const Text('¿Cuantas horas quieres reservar la oficina?'),
+                    actions: [
+
+                      TextButton(
+                        child: Text('Cancel'),
+                        onPressed: () { Navigator.pop(context); },
+                      ),
+                      TextButton(
+                        child: Text('OK'),
+                        onPressed: () { 
+                          Navigator.pop(context, costoTotal); 
+                          },
+
+                      ),
+                      ],
+
+                    content: StatefulBuilder(
+                      builder: (BuildContext context, void Function(void Function()) setState) {  
+                       return NumberPicker(
+                        minValue: 1, 
+                        maxValue: 8, 
+                        value: _currentValue,
+                        axis: Axis.horizontal,
+                         
+                        onChanged: (value) => {
+                          setState(() => {
+                            _currentValue = value,
+                            print(value),
+                            print(widget.precio),
+                            costoTotal = value * widget.precio
+                            }),
+                           
+                        }
+                        );
+                      },
+                    ),
+                   );
+                  },
+                );
+              if (hours != null) {
+                Get.snackbar('Bioma Cowork', 'Agendado con Exito', duration: const Duration(seconds: 3), backgroundColor: Color(0xfff73B59E));
+                var result = DB.insert(Reserva(usuario: 'Cliente', oficina: widget.name, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: widget.name + newDate.toString() + newTime.toString(), image: widget.image));
+                print(result);
+              }
+                
+              }
+              }
+              
 						},
 						  )
 					),
@@ -179,6 +257,38 @@ class _areaDetails extends StatelessWidget {
 		
 		
       ],
+
+
+
+
+      
     );
+
+
+
+
+
+
   }
 }
+
+Future<DateTime?> getDatePickerWidget(BuildContext context) {
+  return showDatePicker(
+   	context: context, 
+		initialDate: DateTime.now(), 
+		firstDate: DateTime(2021), 
+		lastDate: DateTime(2024),
+    
+
+    
+  );
+}
+
+Future<TimeOfDay?> getPickerTime(BuildContext context) {
+  return showTimePicker(
+   	context: context, 
+    initialTime: TimeOfDay.now(),
+		
+  );
+}
+
