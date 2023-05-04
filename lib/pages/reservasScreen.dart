@@ -1,17 +1,23 @@
 
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bioma_application/models/reserva.dart';
+import 'package:flutter_bioma_application/providers/area_provider.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:provider/provider.dart';
 
 import '../database/db.dart';
+import '../models/reservaModel.dart';
+import '../providers/user_provider.dart';
 import 'login.dart';
 import 'qrScreen.dart';
 import 'reservaDetailScreen.dart';
+import 'package:http/http.dart' as http;
 
 class ReservasScreen extends StatefulWidget {
   const ReservasScreen({super.key});
@@ -21,11 +27,10 @@ class ReservasScreen extends StatefulWidget {
 }
 
 class _ReservasScreenState extends State<ReservasScreen> {
-  int _currentValue = 5;
-  num costoTotal = 5;
+  
   @override
   Widget build(BuildContext context) {
-    
+    final userService = Provider.of<UserService>(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -44,11 +49,12 @@ class _ReservasScreenState extends State<ReservasScreen> {
           image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
         ),
         width: double.infinity,
+        height: double.infinity,
         child: Center(
           child: SizedBox(
             height: 500,
             child: FutureBuilder(
-              future: getReservasList(),
+              future: getReservas(),
               builder: ((context, snapshot) {
                 
               if (snapshot.connectionState == ConnectionState.none) {
@@ -56,153 +62,25 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 return CircularProgressIndicator();
         
               } else if(snapshot.connectionState == ConnectionState.done) {
-        
-                print(snapshot.connectionState);
-                final List<Reserva> reservaslist = snapshot.data!;
-            return ListView(
-                physics: const BouncingScrollPhysics(),
-                scrollDirection: Axis.vertical,
-                children: reservaslist
-              .map(
-                (item) => 
-                Column(
-                  children: [
-                    Card(
-                          color: const Color.fromARGB(115, 76, 175, 79),
-                          child: Dismissible(
-                            background: Container(
-                              color: Colors.red,
-                              child: const ListTile(leading: Icon(Icons.delete_forever, size: 50,))
-                              ),
-                            secondaryBackground: Container(
-                              color: Colors.green,
-                              child: const ListTile(trailing: Icon(Icons.edit_calendar_outlined, size: 50,))
-                              ),
-                            key: Key(item.codigoQR),
-                            onDismissed: (direction) async{
+                print('cargando reservas');
 
-                              if (direction == DismissDirection.startToEnd){
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) { 
-                                    return AlertDialog(
-                                    title: const Text('¿Estas seguro de eliminarlo?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: (){Navigator.pop(context);setState(() {}); }, 
-                                        child: const Text('Cancelar')),
-                                
-                                      TextButton(
-                                        onPressed: () async {
-                                          var delete = await DB.delete(item);
-                                          reservaslist.remove(item);
-                                          Navigator.pop(context);
-                                          setState(() {});
-                                        }, 
-                                        child: const Text('Confirmar')),
-                                    ],
-                                  );
-                                   }, 
-                                );
-                                
-                              
-                              }
-
-                              if(direction == DismissDirection.endToStart){
-                                DateTime? newDate = await getDatePickerWidget(context);
-
-                                   if (newDate != null) {
-                                   String dateFormated = DateFormat('yyyy-MM-dd').format(newDate!);
-                                   TimeOfDay? newTime = await getPickerTime(context);
-                                    
-                                      
-                                   if(newTime != null){
-                                     final localizations = MaterialLocalizations.of(context);
-                                     final timeFormated = localizations.formatTimeOfDay(newTime!);
-                                    var hours = await showDialog(context: context, builder: (context) {
-                                    
-                                       return AlertDialog(
-                                         title: const Text('¿Cuantas horas quieres reservar la oficina?'),
-                                         actions: [
-                                          
-                                           TextButton(
-                                             child: Text('Cancel'),
-                                             onPressed: () { Navigator.pop(context); setState(() {});},
-                                           ),
-                                           TextButton(
-                                             child: Text('OK'),
-                                             onPressed: () { 
-                                               Navigator.pop(context, costoTotal); 
-                                               },
-    
-                                           ),
-                                           ],
-                      
-                                         content: StatefulBuilder(
-                                           builder: (BuildContext context, void Function(void Function()) setState) {  
-                                            return NumberPicker(
-                                             minValue: 1, 
-                                             maxValue: 8, 
-                                             value: _currentValue,
-                                             axis: Axis.horizontal, 
-                                             onChanged: (value) => {
-                                               setState(() => {
-                                                 _currentValue = value,
-                                                //  print(value),
-                                                //  print(widget.precio),
-                                                 costoTotal = value * item.costo
-                                                 }),
-                           
-                                                               }
-                                                               );
-                                                             },
-                                                           ),
-                                                          );
-                                                         },
-                                                       );
-                                                     if (hours != null) {
-                                                       Get.snackbar('Bioma Cowork', 'Modificado con Exito', duration: const Duration(seconds: 3), backgroundColor:Colors.blue);
-                                                       var result = await DB.insert(Reserva(usuario: 'Cliente', oficina: item.oficina, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: item.oficina + newDate.toString() + newTime.toString(), image: item.image));
-                                                       var deleteObsolete = await DB.delete(item);
-                                                       print(result.toString());
-                                                       print('Actualizado');
-                                                       setState(() {});
-                                                     }
-                
-              }else{setState(() {});}
-              }else{setState(() {});}
-                
-            }    
-
-                            },
-                            child: ListTile(
-                              title: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(item.oficina),
-                                  
-                                  Text(item.fecha),
-                                ],
-                              ),
-                              leading: const Icon(Icons.book_outlined),
-                              trailing: const Icon(Icons.arrow_forward_ios_outlined),
-                              
-                              onTap: () {
-                                Get.to(()=>  ReservaDetailsScreen(fecha: item.fecha,hora: item.hora, image: item.image, name: item.oficina, costo: item.costo, codigoQR: item.codigoQR,), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
-                              },
-                              
-                            ),
-                          ),
-                        ),
-                    SizedBox(height: 10)             
-                  ],
-                ),
-                    
-                 //Mostrar el titulo principal aqui
+                // print(snapshot.data!.reservas);
+                List<Reserva> misReservas = [];
+                final object = jsonEncode(userService.activeUser);
+                final usuario = jsonDecode(object);
+                // print(usuario['name']);
+                print(snapshot.data!.reservas.map((e) => {
+                  if(usuario['name'] == e.usuario ){
+                    misReservas.add(e)
+                    // print('Aqui VA'),
+                    // print(e.area)
+                  },
+                }));
+                // print(misReservas);
+                 return _ListReservas(reservas: misReservas);
+                // print(snapshot.connectionState);
+                // final List<Reserva> reservaslist = snapshot.data!;
             
-              )
-              .toList(),
-                );
             
                 
              }
@@ -215,6 +93,193 @@ class _ReservasScreenState extends State<ReservasScreen> {
     
   }
 }
+
+class _ListReservas extends StatelessWidget {
+  const _ListReservas({super.key, required this.reservas});
+  final List<Reserva> reservas;
+  @override
+  Widget build(BuildContext context) {
+  final areaService = Provider.of<AreaService>(context, listen: false);
+  final userService = Provider.of<UserService>(context, listen: false);
+
+   int _currentValue = 5;
+   num costoTotal = 5;
+    return ListView.builder(
+          itemCount: reservas.length,
+          itemBuilder: ((context, index) {
+            final reserva  = reservas[index];
+            return SizedBox(
+              height: 400,
+              child: ListView(
+                physics: const BouncingScrollPhysics(),
+                scrollDirection: Axis.vertical,
+                // shrinkWrap: true,
+                children: reservas.map(
+                (item) => 
+                Column(
+                  children: [
+                      Card(
+                      color: const Color.fromARGB(115, 76, 175, 79),
+                      child: Dismissible(
+                        background: Container(
+                          color: Colors.red,
+                          child: const ListTile(leading: Icon(Icons.delete_forever, size: 50,))
+                          ),
+                        secondaryBackground: Container(
+                          color: Colors.green,
+                          child: const ListTile(trailing: Icon(Icons.edit_calendar_outlined, size: 50,))
+                          ),
+                        key: Key('key'),
+                        onDismissed: (direction) async{
+            
+                        if (direction == DismissDirection.startToEnd){
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) { 
+                              return AlertDialog(
+                              title: const Text('¿Estas seguro de eliminarlo?'),
+                              actions: [
+                              TextButton(
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                  // setState(() {}); 
+                                  }, 
+                                child: const Text('Cancelar')),
+                        
+                              TextButton(
+                                onPressed: () async {
+                                  
+                                  var result = await http.delete(Uri.parse('http://10.0.2.2:4000/api/reservas'),body: {'area': item.area, 'usuario': item.usuario, 'start' : item.start.toString(), 'end': item.end.toString(), 'price': item.price.toString(), 'codigoQR': item.codigoQr, 'id' : item.id});
+                                  print(result.body);
+                                  // var delete = await  await http.delete(Uri.parse('http://10.0.2.2:4000/api/reservas'));
+                                  reservas.remove(item);
+                                  Navigator.pop(context);
+                                  // setState(() {});
+                                }, 
+                                child: const Text('Confirmar')),
+                            ],
+                                );
+                               }, 
+                              );
+                             }
+            
+                            if(direction == DismissDirection.endToStart){
+                              DateTime? newDate = await getDatePickerWidget(context);
+            
+                              if (newDate != null) {
+                              String dateFormated = DateFormat('yyyy-MM-dd').format(newDate);
+                              TimeOfDay? newTime = await getPickerTime(context);
+                                      
+                              if(newTime != null){
+                                final localizations = MaterialLocalizations.of(context);
+                                final timeFormated = localizations.formatTimeOfDay(newTime!);
+                              var hours = await showDialog(context: context, builder: (context) {
+                                      
+                              return AlertDialog(
+                                title: const Text('¿Cuantas horas quieres reservar la oficina?'),
+                                actions: [
+                                            
+                                TextButton(
+                                  child: Text('Cancel'),
+                                  onPressed: () { Navigator.pop(context); 
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('OK'),
+                                  onPressed: () { 
+                                    Navigator.pop(context, costoTotal); 
+                                    },
+                                ),
+                                ],
+                        
+                                content: StatefulBuilder(
+                                  builder: (BuildContext context, void Function(void Function()) setState) {  
+                                  return NumberPicker(
+                                    minValue: 1, 
+                                    maxValue: 8, 
+                                    value: _currentValue,
+                                    axis: Axis.horizontal, 
+                                    onChanged: (value) => {
+                                      setState(() => {
+                                        _currentValue = value,
+                                      //  print(value),
+                                      //  print(widget.precio),
+                                        costoTotal = value * item.price
+                                        }),
+                             
+                          }
+                          );
+                        },
+                      ),
+                    );
+                    },
+                  );
+                if (hours != null) {
+                  // var result = await DB.insert(Reserva(usuario: 'Cliente', oficina: item.oficina, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: item.oficina + newDate.toString() + newTime.toString(), image: item.image));
+                  final usuario = {
+                    'area': item.area,
+                    'usuario': item.usuario,
+                    'start': dateFormated.toString(),
+                    'end': dateFormated.toString(),
+                    'price': costoTotal.toString(),
+                    'codigoQR': item.area + newDate.toString() + newTime.toString()
+                  };
+                  final resp = await http.put(Uri.parse('http://10.0.2.2:4000/api/reservas'), body: usuario);
+                  // var deleteObsolete = await DB.delete(item);
+                  print(resp.toString());
+                  print('Actualizado');
+                  Get.snackbar('Bioma Cowork', 'Modificado con Exito', duration: const Duration(seconds: 3), backgroundColor:Colors.blue);
+                  // setState(() {});
+                }
+                  // final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/areas'));
+                }else{
+                  // setState(() {});
+                }
+                }else{
+                  // setState(() {});
+                }
+                  
+              }    
+            
+                      },
+                      child: ListTile(
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(item.area),
+                            
+                            Text(item.usuario),
+                          ],
+                        ),
+                        leading: const Icon(Icons.book_outlined),
+                        trailing: const Icon(Icons.arrow_forward_ios_outlined),
+                        
+                        onTap: () {
+                          final object = jsonEncode(areaService.areas);
+                          final List<dynamic> areas = jsonDecode(object);
+                          final area = areas.firstWhere((element) => element['name'] == item.area, orElse: () => print('No matching element.'));
+                          print(area['image']);
+                          Get.to(()=>  ReservaDetailsScreen(fecha: item.start.toString(), hora: item.start.toString(), image: area['image'], name: item.area, costo: item.price, codigoQR: item.codigoQr.toString(),), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+                        },
+                        
+                      ),
+                    ),
+                  ),
+              SizedBox(height: 10)             
+                      ],
+                    ),
+                      
+                   //Mostrar el titulo principal aqui
+              
+                )
+                .toList(),
+                  ),
+            ); 
+            }));
+  }
+}
+
+
 // ignore: camel_case_types
 class _headerImage extends StatelessWidget {
   const _headerImage({super.key, required this.image});
@@ -378,9 +443,9 @@ class _areaDetails extends StatelessWidget {
 Future<DateTime?> getDatePickerWidget(BuildContext context) {
   return showDatePicker(
    	context: context, 
-		initialDate: DateTime.now(), 
-		firstDate: DateTime(2022), 
-		lastDate: DateTime(2023),
+		initialDate: DateTime.now() , 
+		firstDate: DateTime(2010), 
+		lastDate: DateTime(2025),
     
 
     
@@ -395,8 +460,15 @@ Future<TimeOfDay?> getPickerTime(BuildContext context) {
   );
 }
 
-Future<List<Reserva>>getReservasList () async{
+// Future<List<Reserva>>getReservasList () async{
 
-  final consulta = await DB.reservas();
-    return consulta;
+//   final consulta = await DB.reservas();
+//     return consulta;
+// }
+
+Future<ReservaModel> getReservas() async{
+  final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/reservas'));
+  // print(resp.body);
+  return reservaModelFromJson(resp.body);
+
 }

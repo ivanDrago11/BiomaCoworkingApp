@@ -1,5 +1,7 @@
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/pages/areasScreen.dart';
 import 'package:get/get.dart';
@@ -8,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_providers.dart';
 import '../providers/login_provider.dart';
+import '../providers/user_provider.dart';
 import '../utils/notifications_service.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -21,7 +24,7 @@ class LoginScreen extends StatelessWidget {
       // backgroundColor: Color(0xFFFc74848),
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
+          image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.cover)
         ),
         width: double.infinity,
         child: const SafeArea(
@@ -103,12 +106,12 @@ class _LoginFields extends StatelessWidget {
                   
               ),
               validator: ((value) {
-                 String pattern = r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-                    RegExp regExp  = RegExp(pattern);
+                //  String pattern = r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+                //     RegExp regExp  = RegExp(pattern);
     
-                    return regExp.hasMatch(value ?? '')
-                    ? null
-                    : 'El correo no es valido';
+                //     return regExp.hasMatch(value ?? '')
+                //     ? null
+                //     : 'El correo no es valido';
                               
               }
             ),
@@ -143,7 +146,7 @@ class _LoginFields extends StatelessWidget {
               ),
               validator: (value) {
                 
-                return (value != null && value.length >= 6) 
+                return (value != null && value.length >= 1) 
                 ? null
                 : 'La contraseña debe ser mayor a 6 caracteres';
                 
@@ -170,6 +173,7 @@ class _LoginFields extends StatelessWidget {
                 FocusScope.of(context).unfocus();
                 
                 final authService = Provider.of<AuthService>(context, listen: false);
+                final userService = Provider.of<UserService>(context, listen: false);
                 
                 if( !loginForm.isValidForm() ) return NotificationsService.showSnackbar('Campos Invalidos');
 
@@ -177,15 +181,19 @@ class _LoginFields extends StatelessWidget {
 
 
                 // TODO: validar si el login es correcto
-                final String? errorMessage = await authService.login(loginForm.email, loginForm.password);
+                final String response = await authService.login(loginForm.email, loginForm.password);
+                final resp = jsonDecode(response); 
+                // print(resp['user']['name']);
+                // print(userService.activeUser);
 
-                if ( errorMessage == null ) {
+                if ( resp['user'] != null ) {
                   Get.offAll(()=> const AreasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+                  userService.activeUser = resp['user'];
                   // Navigator.pushReplacementNamed(context, 'mapa');
                 } else {
                   // TODO: mostrar error en pantalla
                   // print( errorMessage );
-                  NotificationsService.showSnackbar(errorMessage);
+                  NotificationsService.showSnackbar(resp['msg']);
                   loginForm.isLoading = false;
                 }
               },

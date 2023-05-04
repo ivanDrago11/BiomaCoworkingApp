@@ -1,5 +1,8 @@
 
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/models/reserva.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,14 +49,14 @@ class _ReservaDetailsScreenState extends State<ReservaDetailsScreen> {
 class _headerImage extends StatelessWidget {
   const _headerImage({super.key, required this.image});
   final String image;
-
   @override
   Widget build(BuildContext context) {
+  Uint8List _bytes = base64.decode( image.split(',').last);
     return  SizedBox(
       height: 350,
       child: ClipRRect(
         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(50), bottomRight: Radius.circular(50)),
-        child: Image(image: NetworkImage(image),fit: BoxFit.cover,)),
+        child: Image(image: MemoryImage(_bytes),fit: BoxFit.cover,)),
     );
   }
 }
@@ -99,8 +102,8 @@ class _areaDetailsState extends State<_areaDetails> {
 			child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 			  children: [
-			    Text(widget.fecha, style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
-			    Text(widget.hora, style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+			    Text(widget.fecha.replaceRange(10, 24, ''), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+			    // Text(widget.hora.replaceRange(0, 10, ''), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
 			  ],
 			),),
 			

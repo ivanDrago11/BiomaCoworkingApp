@@ -1,23 +1,28 @@
 
 
 
-import 'dart:ffi';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/models/reserva.dart';
+import 'package:flutter_bioma_application/providers/user_provider.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import '../database/db.dart';
 
 class AreaDetailsScreen extends StatefulWidget {
-  const AreaDetailsScreen({super.key, required this.name, required this.precio, required this.capacidad, required this.image});
+  const AreaDetailsScreen({super.key, required this.name, required this.precio, required this.capacidad, required this.image, required this.description});
   final String name;
   final num precio;
   final String capacidad; 
   final String image;
+  final String description;
 
   @override
   State<AreaDetailsScreen> createState() => _AreaDetailsScreenState();
@@ -38,7 +43,7 @@ class _AreaDetailsScreenState extends State<AreaDetailsScreen> {
       body: Column(
         children: [
           	    _headerImage(image: widget.image),
-          		_areaDetails(name: widget.name, precio: widget.precio, capacidad: widget.capacidad,image: widget.image,)
+          		_areaDetails(name: widget.name, precio: widget.precio, capacidad: widget.capacidad,image: widget.image, description: widget.description,)
         ],
       ),
     );
@@ -51,22 +56,24 @@ class _headerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Uint8List _bytes = base64.decode( image.split(',').last);
     return  SizedBox(
       height: 350,
       child: ClipRRect(
         borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(50), bottomRight: Radius.circular(50)),
-        child: Image(image: NetworkImage(image),fit: BoxFit.cover,)),
+        child: Image(image: MemoryImage(_bytes),fit: BoxFit.cover,)),
     );
   }
 }
 
 // ignore: camel_case_types
 class _areaDetails extends StatefulWidget {
-  const _areaDetails({super.key, required this.name, required this.precio, required this.capacidad, required this.image});
+  const _areaDetails({super.key, required this.name, required this.precio, required this.capacidad, required this.image, required this.description});
   final String name;
   final num precio;
   final String capacidad;
   final String image;
+  final String description;
 
   @override
   State<_areaDetails> createState() => _areaDetailsState();
@@ -77,6 +84,7 @@ class _areaDetailsState extends State<_areaDetails> {
   num costoTotal = 5;
   @override
   Widget build(BuildContext context) {
+    final userService = Provider.of<UserService>(context, listen: false);
     return Column(
 		crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -95,7 +103,7 @@ class _areaDetailsState extends State<_areaDetails> {
         SizedBox(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 0 ),
-			child: Text('Comoda sala de juntas que esta acondicionada con las mas utiles necesidades de la actualidad.', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),),
+			child: Text(widget.description, style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),),
 			
         ),
 		Padding(
@@ -210,7 +218,7 @@ class _areaDetailsState extends State<_areaDetails> {
                       TextButton(
                         child: Text('OK'),
                         onPressed: () { 
-                          Navigator.pop(context, costoTotal); 
+                          Navigator.pop(context, [costoTotal, _currentValue]); 
                           },
 
                       ),
@@ -240,9 +248,15 @@ class _areaDetailsState extends State<_areaDetails> {
                   },
                 );
               if (hours != null) {
+                final object = jsonEncode(userService.activeUser);
+                final Map<String, dynamic> usuario = jsonDecode(object);
+                print(usuario['name']);
+                
+                   var result = await http.post(Uri.parse('http://10.0.2.2:4000/api/reservas'),body: {'area': widget.name, 'usuario': usuario['name'], 'start' : dateFormated.toString(), 'end': dateFormated.toString(), 'price': costoTotal.toString(), 'codigoQR': widget.name + newDate.toString() + newTime.toString()});
+                   print(result.body);
                 Get.snackbar('Bioma Cowork', 'Agendado con Exito', duration: const Duration(seconds: 3), backgroundColor: Color(0xfff73B59E));
-                var result = DB.insert(Reserva(usuario: 'Cliente', oficina: widget.name, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: widget.name + newDate.toString() + newTime.toString(), image: widget.image));
-                print(result);
+                // var result = DB.insert(Reserva(usuario: 'Cliente', oficina: widget.name, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: widget.name + newDate.toString() + newTime.toString(), image: widget.image));
+                // print(result);
               }
                 
               }
@@ -276,8 +290,8 @@ Future<DateTime?> getDatePickerWidget(BuildContext context) {
   return showDatePicker(
    	context: context, 
 		initialDate: DateTime.now(), 
-		firstDate: DateTime(2021), 
-		lastDate: DateTime(2024),
+		firstDate: DateTime.now(), 
+		lastDate: DateTime.now().add(const Duration(days: 30)),
     
 
     
@@ -288,7 +302,7 @@ Future<TimeOfDay?> getPickerTime(BuildContext context) {
   return showTimePicker(
    	context: context, 
     initialTime: TimeOfDay.now(),
-		
+    
   );
 }
 
