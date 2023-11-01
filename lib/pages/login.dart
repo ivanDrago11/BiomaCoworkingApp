@@ -24,7 +24,7 @@ class LoginScreen extends StatelessWidget {
       // backgroundColor: Color(0xFFFc74848),
       body: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.cover)
+          // image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.cover)
         ),
         width: double.infinity,
         child: const SafeArea(
@@ -45,25 +45,41 @@ class _LoginForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        
-        const SizedBox(height: 10,),
-        Text('BiomaCowork',style: GoogleFonts.openSans(fontSize: 40, color: Colors.white, shadows: customShadow)),
-        const SizedBox(height: 10,),
-        Text('Ingresa tu cuenta',style: GoogleFonts.openSans(fontSize: 20, color: Colors.white, shadows: customShadow)
-    ),
-        const SizedBox(height: 30,),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 50,),
 
-        ChangeNotifierProvider(create: (context) => LoginFormProvider(),
-        child: const _LoginFields(),),
-
-        TextButton(onPressed: () {}, child:Text('¿Olvidaste tu contraseña?',style: GoogleFonts.openSans(fontSize: 15, color: Color(0xfff388080), fontWeight: FontWeight.bold))),
-        const SizedBox(height: 20,),
-     
-      ],
+          const Image(image: AssetImage('assets/LOGO.png'), fit: BoxFit.contain, width: 200,),
+       
+          // Text('BiomaCowork',style: GoogleFonts.inconsolata(fontSize: 40, color: Colors.white,fontWeight: FontWeight.bold, shadows: customShadow)),
+          const SizedBox(height: 40,),
+          
+          Container(
+            alignment: Alignment.center,
+            margin: const EdgeInsets.symmetric(horizontal: 90,vertical: 10 ),
+            height: 25,
+            decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            // color: Colors.white,
+            // border: Border.all(
+            //   color: Colors.white,
+            //    width: 2)
+                ),
+            child: Text('Ingresa tu cuenta', style: GoogleFonts.inconsolata(fontSize: 18, color: Colors.green,fontWeight: FontWeight.bold,)),
+          ),
+          const SizedBox(height: 2,),
+    
+          ChangeNotifierProvider(create: (context) => LoginFormProvider(),
+          child: const _LoginFields(),),
+    
+          TextButton(onPressed: () {}, child:Text('¿Olvidaste tu contraseña?',style: GoogleFonts.openSans(fontSize: 15, color: Colors.green, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 20,),
+       
+        ],
+      ),
     );
   }
 
@@ -89,20 +105,20 @@ class _LoginFields extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(50),
-          color: const Color(0xfff388080),
+          color: Colors.green,
               ),
               width: double.infinity,
               child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, ),
             child: TextFormField(
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.white),
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 border: InputBorder.none,
-                errorStyle: TextStyle(color: Colors.white70, wordSpacing: 0),
+                errorStyle: TextStyle(color: Colors.white, wordSpacing: 0),
                 hintText: 'example@mail.com',
-                hintStyle: TextStyle(color: Colors.white70)
+                hintStyle: TextStyle(color: Colors.white)
                   
               ),
               validator: ((value) {
@@ -128,7 +144,7 @@ class _LoginFields extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(50),
-          color: const Color(0xfff388080),
+          color: Colors.green,
               ),
               width: double.infinity,
               child: Center(
@@ -136,13 +152,13 @@ class _LoginFields extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 40.0),
             child: TextFormField(
               obscureText: true,
-              style: const TextStyle(color: Colors.white70),
+              style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 border: InputBorder.none,
-                errorStyle: TextStyle(color: Colors.white70),
+                errorStyle: TextStyle(color: Colors.white),
                 errorBorder: InputBorder.none,
                 hintText: '**********',
-                hintStyle: TextStyle(color: Colors.white70),
+                hintStyle: TextStyle(color: Colors.white),
               ),
               validator: (value) {
                 
@@ -165,7 +181,8 @@ class _LoginFields extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(50),
-          color: Colors.blueAccent,
+          color: Colors.white,
+          border: Border.all(color: Colors.green, width: 5)
           ),
       child: MaterialButton(
           onPressed: loginForm.isLoading ? null : () async {
@@ -189,6 +206,8 @@ class _LoginFields extends StatelessWidget {
                 if ( resp['user'] != null ) {
                   Get.offAll(()=> const AreasScreen(), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
                   userService.activeUser = resp['user'];
+                  print('Active User');
+                  print(userService.activeUser);
                   // Navigator.pushReplacementNamed(context, 'mapa');
                 } else {
                   // TODO: mostrar error en pantalla
@@ -201,7 +220,7 @@ class _LoginFields extends StatelessWidget {
             loginForm.isLoading 
             ? 'Espere'
             : 'Ingresar', 
-            style: GoogleFonts.openSans(fontSize: 15, color: Colors.white, fontWeight: FontWeight.bold)
+            style: GoogleFonts.openSans(fontSize: 15, color: Colors.green, fontWeight: FontWeight.bold)
             ),
             ),
         )
@@ -218,7 +237,7 @@ class _LoginFields extends StatelessWidget {
     return const <Shadow>[
     Shadow(
       offset: Offset(1.0, 1.0),
-      blurRadius: 10.0,
+      blurRadius: 1.0,
       color: Color.fromARGB(248, 0, 0, 0),
     ),
     Shadow(

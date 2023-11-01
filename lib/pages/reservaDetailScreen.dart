@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/models/reserva.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -36,11 +37,13 @@ class _ReservaDetailsScreenState extends State<ReservaDetailsScreen> {
         backgroundColor: const Color.fromARGB(0, 23, 195, 178),
         
       ),
-      body: Column(
-        children: [
-          	  _headerImage(image: widget.image),
-          		_areaDetails(name: widget.name, image: widget.image, fecha: widget.fecha, hora: widget.hora, costo: widget.costo, codigoQR: widget.codigoQR,)
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+                _headerImage(image: widget.image),
+                _areaDetails(name: widget.name, image: widget.image, fecha: widget.fecha, hora: widget.hora, costo: widget.costo, codigoQR: widget.codigoQR,)
+          ],
+        ),
       ),
     );
   }
@@ -99,10 +102,21 @@ class _areaDetailsState extends State<_areaDetails> {
         SizedBox(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 0 ),
-			child: Row(
+			child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 			  children: [
-			    Text(widget.fecha.replaceRange(10, 24, ''), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+			    Text(DateFormat.yMd().format(DateTime.parse(widget.fecha)), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+			    Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+			      children: [
+			        Text(DateFormat.jm().format(DateTime.parse(widget.fecha)), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+              SizedBox(width: 10,),
+              Text('A', style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+              SizedBox(width: 10,),
+              Text(DateFormat.jm().format(DateTime.parse(widget.hora)), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
+              
+            ],
+			    ),
 			    // Text(widget.hora.replaceRange(0, 10, ''), style: GoogleFonts.roboto(fontSize: 25, fontWeight: FontWeight.w300, ),textAlign: TextAlign.justify,),
 			  ],
 			),),

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:http/http.dart' as http;
@@ -80,7 +81,8 @@ class AuthService extends ChangeNotifier {
       'key': _firebaseToken
     });
     print(authData);
-    final resp = await http.post(Uri.parse('http://10.0.2.2:4000/api/login'),body: authData);
+    // dotenv.get('API_URL') + '/api/login'
+    final resp = await http.post(Uri.parse(dotenv.get('API_URL_EMU') + '/api/login'),body: authData);
     print(resp.body);
 
     return resp.body;

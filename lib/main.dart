@@ -1,16 +1,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/pages/areasScreen.dart';
+import 'package:flutter_bioma_application/pages/reservasScreen.dart';
 import 'package:flutter_bioma_application/providers/area_provider.dart';
 import 'package:flutter_bioma_application/providers/auth_providers.dart';
 import 'package:flutter_bioma_application/providers/user_provider.dart';
 import 'package:flutter_bioma_application/utils/notifications_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/login.dart';
 
-void main() {
+Future<void> main() async {
+  await dotenv.load();
   runApp(const AppState());
 }
 class AppState extends StatelessWidget {
@@ -45,6 +48,7 @@ class MyApp extends StatelessWidget {
       routes: {
         'login' : (context) => const LoginScreen(),
         'areas' : (context) => const AreasScreen(),
+        'reservas' : (context) => const ReservasScreen(),
       },
     );
   }

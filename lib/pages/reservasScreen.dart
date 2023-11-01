@@ -5,6 +5,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bioma_application/providers/area_provider.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -32,13 +34,16 @@ class _ReservasScreenState extends State<ReservasScreen> {
   Widget build(BuildContext context) {
     final userService = Provider.of<UserService>(context);
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        elevation: 0,
+        toolbarHeight: 70,
+        elevation: 1,
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(67, 23, 195, 178),
-        title:  Text('Bioma Cowork', style: GoogleFonts.roboto(shadows: customShadow),),
+        backgroundColor: Colors.white,
+        title: const Image(image: AssetImage('assets/LOGO.png'), fit: BoxFit.contain, width: 70,),
+        iconTheme: const IconThemeData(color: Colors.green), 
+        // Text('Bioma Cowork', style: GoogleFonts.roboto(shadows: customShadow),),
       ),
       body: Container(
         
@@ -46,13 +51,13 @@ class _ReservasScreenState extends State<ReservasScreen> {
         //   gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Colors.greenAccent, Colors.white], stops: [0.3, 0.8])
         // ),
         decoration: const BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
+          // image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
         ),
         width: double.infinity,
         height: double.infinity,
         child: Center(
           child: SizedBox(
-            height: 500,
+            // height: 500,
             child: FutureBuilder(
               future: getReservas(),
               builder: ((context, snapshot) {
@@ -77,7 +82,11 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   },
                 }));
                 // print(misReservas);
+                if (misReservas.length == 0) {
+                  return Container(child: const Text('No hay resevas'),);
+                }else{
                  return _ListReservas(reservas: misReservas);
+                }
                 // print(snapshot.connectionState);
                 // final List<Reserva> reservaslist = snapshot.data!;
             
@@ -105,11 +114,14 @@ class _ListReservas extends StatelessWidget {
    int _currentValue = 5;
    num costoTotal = 5;
     return ListView.builder(
-          itemCount: reservas.length,
+      physics: BouncingScrollPhysics(),
+          itemCount: 1,
           itemBuilder: ((context, index) {
+            final DateFormat formatter = DateFormat('yyyy-MM-dd');
+            
             final reserva  = reservas[index];
             return SizedBox(
-              height: 400,
+              height: 650,
               child: ListView(
                 physics: const BouncingScrollPhysics(),
                 scrollDirection: Axis.vertical,
@@ -149,7 +161,7 @@ class _ListReservas extends StatelessWidget {
                               TextButton(
                                 onPressed: () async {
                                   
-                                  var result = await http.delete(Uri.parse('http://10.0.2.2:4000/api/reservas'),body: {'area': item.area, 'usuario': item.usuario, 'start' : item.start.toString(), 'end': item.end.toString(), 'price': item.price.toString(), 'codigoQR': item.codigoQr, 'id' : item.id});
+                                  var result = await http.delete(Uri.parse(dotenv.get('API_URL_EMU') + '/api/reservas'),body: {'area': item.area, 'usuario': item.usuario, 'start' : item.start.toString(), 'end': item.end.toString(), 'price': item.price.toString(), 'codigoQR': item.codigoQr, 'id' : item.id});
                                   print(result.body);
                                   // var delete = await  await http.delete(Uri.parse('http://10.0.2.2:4000/api/reservas'));
                                   reservas.remove(item);
@@ -164,91 +176,149 @@ class _ListReservas extends StatelessWidget {
                              }
             
                             if(direction == DismissDirection.endToStart){
-                              DateTime? newDate = await getDatePickerWidget(context);
+                               String confirm = 'NO';
+                               DateTime timeStart = DateTime.now();
+                               DateTime timeEnd = DateTime.now();
+                               await DatePicker.showDateTimePicker(context,
+                               showTitleActions: true,
+                               minTime: DateTime.now().subtract(const Duration(hours: 1)),
+                               maxTime: DateTime.now().add(const Duration(days: 30)), 
+                               onChanged: (date) {
+                                 // print('change $date');
+                               }, 
+                               onConfirm: (date) {
+                                 // print('confirm $date');
+                                 confirm = 'YES';
+                                 timeStart = date;
+                               }, 
+                               currentTime: DateTime.now().subtract(const Duration(hours: 1)), 
+                               locale: LocaleType.es);
+                               print(confirm);
+
+                               if (confirm == 'YES') {
+                                await DatePicker.showDateTimePicker(context,
+                                showTitleActions: true,
+                                minTime: timeStart.add(const Duration(hours: 1)),
+                                maxTime: timeStart.add(Duration(hours: 8)), 
+                                onChanged: (date) {
+                                  print('change $date');
+                                }, 
+                                onConfirm: (date) {
+                                  print('confirm $date');
+                                  confirm = 'YESx2';
+                                  timeEnd = date;
+                                }, 
+                                currentTime: timeStart.add(const Duration(hours: 1)), 
+                                locale: LocaleType.es);
+                                 }                
+
+                                 if (confirm == 'YESx2') {
+                                   final object = jsonEncode(userService.activeUser);
+                                   final Map<String, dynamic> usuario = jsonDecode(object);
+                                   print(usuario['name']);
+
+                                   var result = await http.put(Uri.parse(dotenv.get('API_URL_EMU') + '/api/reservas'),body: {'area': item.area, 'usuario': usuario['name'], 'start' : timeStart.toString(), 'end': timeEnd.toString(), 'price': item.price.toString(), 'codigoQR': '', 'id': item.id});
+                                   print(result.body);
+                                   var res = jsonDecode(result.body);
+                                   print(res["ok"]);
+                                   if (res["ok"]) {
+                                   Get.snackbar('Bioma Cowork', 'Agendado con Exito', duration: const Duration(seconds: 3), backgroundColor: Color(0xfff73B59E));
+                                   }else{
+                                    Get.snackbar('Bioma Cowork', 'Reserva no Disponible', duration: const Duration(seconds: 3), backgroundColor: Color.fromARGB(255, 200, 11, 11), colorText: Colors.white);
+                                   }
+                                 }  
+                //               DateTime? newDate = await getDatePickerWidget(context);
             
-                              if (newDate != null) {
-                              String dateFormated = DateFormat('yyyy-MM-dd').format(newDate);
-                              TimeOfDay? newTime = await getPickerTime(context);
+                //               if (newDate != null) {
+                //               String dateFormated = DateFormat('yyyy-MM-dd').format(newDate);
+                //               TimeOfDay? newTime = await getPickerTime(context);
                                       
-                              if(newTime != null){
-                                final localizations = MaterialLocalizations.of(context);
-                                final timeFormated = localizations.formatTimeOfDay(newTime!);
-                              var hours = await showDialog(context: context, builder: (context) {
+                //               if(newTime != null){
+                //                 final localizations = MaterialLocalizations.of(context);
+                //                 final timeFormated = localizations.formatTimeOfDay(newTime!);
+                //               var hours = await showDialog(context: context, builder: (context) {
                                       
-                              return AlertDialog(
-                                title: const Text('¿Cuantas horas quieres reservar la oficina?'),
-                                actions: [
+                //               return AlertDialog(
+                //                 title: const Text('¿Cuantas horas quieres reservar la oficina?'),
+                //                 actions: [
                                             
-                                TextButton(
-                                  child: Text('Cancel'),
-                                  onPressed: () { Navigator.pop(context); 
-                                  },
-                                ),
-                                TextButton(
-                                  child: Text('OK'),
-                                  onPressed: () { 
-                                    Navigator.pop(context, costoTotal); 
-                                    },
-                                ),
-                                ],
+                //                 TextButton(
+                //                   child: Text('Cancel'),
+                //                   onPressed: () { Navigator.pop(context); 
+                //                   },
+                //                 ),
+                //                 TextButton(
+                //                   child: Text('OK'),
+                //                   onPressed: () { 
+                //                     Navigator.pop(context, costoTotal); 
+                //                     },
+                //                 ),
+                //                 ],
                         
-                                content: StatefulBuilder(
-                                  builder: (BuildContext context, void Function(void Function()) setState) {  
-                                  return NumberPicker(
-                                    minValue: 1, 
-                                    maxValue: 8, 
-                                    value: _currentValue,
-                                    axis: Axis.horizontal, 
-                                    onChanged: (value) => {
-                                      setState(() => {
-                                        _currentValue = value,
-                                      //  print(value),
-                                      //  print(widget.precio),
-                                        costoTotal = value * item.price
-                                        }),
+                //                 content: StatefulBuilder(
+                //                   builder: (BuildContext context, void Function(void Function()) setState) {  
+                //                   return NumberPicker(
+                //                     minValue: 1, 
+                //                     maxValue: 8, 
+                //                     value: _currentValue,
+                //                     axis: Axis.horizontal, 
+                //                     onChanged: (value) => {
+                //                       setState(() => {
+                //                         _currentValue = value,
+                //                       //  print(value),
+                //                       //  print(widget.precio),
+                //                         costoTotal = value * item.price
+                //                         }),
                              
-                          }
-                          );
-                        },
-                      ),
-                    );
-                    },
-                  );
-                if (hours != null) {
-                  // var result = await DB.insert(Reserva(usuario: 'Cliente', oficina: item.oficina, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: item.oficina + newDate.toString() + newTime.toString(), image: item.image));
-                  final usuario = {
-                    'area': item.area,
-                    'usuario': item.usuario,
-                    'start': dateFormated.toString(),
-                    'end': dateFormated.toString(),
-                    'price': costoTotal.toString(),
-                    'codigoQR': item.area + newDate.toString() + newTime.toString()
-                  };
-                  final resp = await http.put(Uri.parse('http://10.0.2.2:4000/api/reservas'), body: usuario);
-                  // var deleteObsolete = await DB.delete(item);
-                  print(resp.toString());
-                  print('Actualizado');
-                  Get.snackbar('Bioma Cowork', 'Modificado con Exito', duration: const Duration(seconds: 3), backgroundColor:Colors.blue);
-                  // setState(() {});
-                }
-                  // final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/areas'));
-                }else{
-                  // setState(() {});
-                }
-                }else{
-                  // setState(() {});
-                }
+                //           }
+                //           );
+                //         },
+                //       ),
+                //     );
+                //     },
+                //   );
+                // if (hours != null) {
+                //   // var result = await DB.insert(Reserva(usuario: 'Cliente', oficina: item.oficina, costo: costoTotal, fecha: dateFormated.toString() ,hora: timeFormated.toString() , codigoQR: item.oficina + newDate.toString() + newTime.toString(), image: item.image));
+                //   final usuario = {
+                //     'area': item.area,
+                //     'usuario': item.usuario,
+                //     'start': dateFormated.toString(),
+                //     'end': dateFormated.toString(),
+                //     'price': costoTotal.toString(),
+                //     'codigoQR': item.area + newDate.toString() + newTime.toString()
+                //   };
+                //   final resp = await http.put(Uri.parse('http://10.0.2.2:4000/api/reservas'), body: usuario);
+                //   // var deleteObsolete = await DB.delete(item);
+                //   print(resp.toString());
+                //   print('Actualizado');
+                //   Get.snackbar('Bioma Cowork', 'Modificado con Exito', duration: const Duration(seconds: 3), backgroundColor:Colors.blue);
+                //   // setState(() {});
+                // }
+                //   // final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/areas'));
+                // }
+                // }
                   
               }    
             
                       },
                       child: ListTile(
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        title: Column(
                           children: [
-                            Text(item.area),
-                            
-                            Text(item.usuario),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(item.area),
+                                
+                                Text(item.usuario),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(formatter.format(item.start)),
+                                
+                              ],
+                            ),
                           ],
                         ),
                         leading: const Icon(Icons.book_outlined),
@@ -259,7 +329,7 @@ class _ListReservas extends StatelessWidget {
                           final List<dynamic> areas = jsonDecode(object);
                           final area = areas.firstWhere((element) => element['name'] == item.area, orElse: () => print('No matching element.'));
                           print(area['image']);
-                          Get.to(()=>  ReservaDetailsScreen(fecha: item.start.toString(), hora: item.start.toString(), image: area['image'], name: item.area, costo: item.price, codigoQR: item.codigoQr.toString(),), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
+                          Get.to(()=>  ReservaDetailsScreen(fecha: item.start.toString(), hora: item.end.toString(), image: area['image'], name: item.area, costo: item.price, codigoQR: item.codigoQr.toString(),), transition: Transition.fade, duration: const Duration(seconds: 1 ,));
                         },
                         
                       ),
@@ -467,7 +537,7 @@ Future<TimeOfDay?> getPickerTime(BuildContext context) {
 // }
 
 Future<ReservaModel> getReservas() async{
-  final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/reservas'));
+  final resp = await http.get(Uri.parse(dotenv.get('API_URL_EMU') + '/api/reservas'));
   // print(resp.body);
   return reservaModelFromJson(resp.body);
 

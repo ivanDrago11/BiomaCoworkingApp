@@ -8,6 +8,7 @@ import 'package:flutter_bioma_application/pages/qrScreen.dart';
 import 'package:flutter_bioma_application/pages/reservasScreen.dart';
 import 'package:flutter_bioma_application/providers/area_provider.dart';
 import 'package:flutter_bioma_application/providers/auth_providers.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -34,8 +35,8 @@ class AreasScreen extends StatelessWidget {
                DrawerHeader(
 
               decoration: const BoxDecoration(
-                 color: Color(0xfff73B59E),
-                 image: DecorationImage(image: AssetImage('assets/splash.png'), fit: BoxFit.contain)
+                 color: Colors.white,
+                 image: DecorationImage(image: AssetImage('assets/LOGO.png'), fit: BoxFit.contain,)
               ),
               child: Container(),
             ),
@@ -80,11 +81,14 @@ class AreasScreen extends StatelessWidget {
         floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        toolbarHeight: 70,
         elevation: 0,
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(67, 23, 195, 178),
-        title:  Text('Bioma Cowork', style: GoogleFonts.roboto(shadows: customShadow),),
+        backgroundColor: Colors.white,
+        title: const Image(image: AssetImage('assets/LOGO.png'), fit: BoxFit.contain, width: 70,),
+        iconTheme: const IconThemeData(color: Colors.green), 
+        // Text('Bioma Cowork', style: GoogleFonts.roboto(shadows: customShadow),),
       ),
       body: Container(
 
@@ -92,7 +96,7 @@ class AreasScreen extends StatelessWidget {
         //   gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Colors.greenAccent, Colors.white], stops: [0.3, 0.8])
         // ),
         decoration: const BoxDecoration(
-          image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
+          // image: DecorationImage(image: AssetImage('assets/second-wallpaper.png'), fit: BoxFit.fill)
         ),
         width: double.infinity,
         child: SizedBox(
@@ -151,7 +155,7 @@ class _ListAreas extends StatelessWidget {
 
 
 Future<AreaModel> getAreas() async{
-  final resp = await http.get(Uri.parse('http://10.0.2.2:4000/api/areas'));
+  final resp = await http.get(Uri.parse(dotenv.get('API_URL_EMU') + '/api/areas'));
   return areaModelFromJson(resp.body);
 
 }
@@ -173,10 +177,10 @@ class CustomAreaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 20,
-      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 35),
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-             borderRadius: BorderRadius.circular(24),
+             borderRadius: BorderRadius.circular(5),
              ),
       child: Column(
              children: [
@@ -200,6 +204,8 @@ class CustomCardFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var list = ["one", "two", "three", "four", "five"];
+
     return Column(
       children: [
         Padding(
@@ -209,10 +215,10 @@ class CustomCardFooter extends StatelessWidget {
             children: [
               SizedBox(
                 width: 140,
-                height: 40,
+                height: 60,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                       // available
                       // ? const Text('Disponible', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: Colors.green ))
@@ -221,8 +227,15 @@ class CustomCardFooter extends StatelessWidget {
                     // const SizedBox(height: 10,),
                     Text(
                       'Capacidad: $capacidad',
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 18),
                     ),
+                    SizedBox(height: 2,),
+                    Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+               children: <Widget>[
+               for(var item in list ) Icon(Icons.star, color: Colors.amber,)
+               ],
+        ), 
                   ],
                 ),
               ),
@@ -234,6 +247,7 @@ class CustomCardFooter extends StatelessWidget {
                   style: const TextStyle(fontSize: 18,fontWeight: FontWeight.bold, color: Colors.black ,)
                 ),
               ),
+               
             ],
           ),
         ),
@@ -262,7 +276,7 @@ class ImageCard extends StatelessWidget {
      Ink.image(
        image: MemoryImage(_bytes),
        height: 150,
-       width: 330,
+       width: 370,
        fit: BoxFit.cover,
        child: InkWell(
          onTap: (() {
